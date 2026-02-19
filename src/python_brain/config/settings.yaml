@@ -1,0 +1,71 @@
+system:
+  name: BaymaxMini
+  version: "1.0.0"
+  log_level: INFO
+  log_dir: /var/log/baymax
+  log_max_bytes: 10485760
+  log_backup_count: 5
+  locale: es_MX
+
+paths:
+  db: config/medicines.db
+  yolo_model: config/neural_net/yolo_v8n.pt
+  face_landmark_model: config/neural_net/face_land.task
+  sounds_dir: assets/sounds
+
+zmq:
+  telemetry_endpoint: "tcp://127.0.0.1:5556"
+  command_endpoint: "tcp://127.0.0.1:5555"
+  topic_telem: "TELEM"
+  topic_cmd: "CMD"
+  sub_linger_ms: 0
+  pub_hwm: 1
+  heartbeat_interval_s: 1.0
+  brain_timeout_s: 2.0
+
+vision:
+  camera_width: 1280
+  camera_height: 720
+  camera_fps: 30
+  camera_format: RGB888
+  detector_confidence: 0.55
+  detector_iou: 0.45
+  detector_device: cpu
+  detector_half: false
+  face_min_detection_confidence: 0.6
+  face_min_tracking_confidence: 0.5
+  visual_memory_ttl_s: 1.5
+  frame_queue_maxsize: 2
+  result_queue_maxsize: 8
+
+audio:
+  stt_model_path: /opt/vosk/model-es
+  stt_sample_rate: 16000
+  stt_block_size: 8000
+  tts_model_path: /opt/piper/es_MX-claude-high.onnx
+  tts_sample_rate: 22050
+  tts_speaker_id: 0
+  sounds_volume: 0.8
+  mic_device_index: null
+
+medical:
+  fever_threshold_c: 37.5
+  hypothermia_threshold_c: 35.0
+  tachycardia_bpm: 100
+  bradycardia_bpm: 50
+  low_spo2_pct: 94.0
+  reminder_lead_time_s: 30
+  missed_dose_window_s: 300
+
+power:
+  nominal_voltage_v: 11.1
+  full_voltage_v: 12.6
+  empty_voltage_v: 9.0
+  capacity_mah: 2200.0
+  cell_count: 3
+  overcurrent_trip_ma: 3000.0
+  overcurrent_clear_ma: 2500.0
+  servo_stall_trip_ma: 2000.0
+  servo_stall_clear_ma: 1200.0
+  low_battery_pct: 15.0
+  critical_battery_pct: 5.0
