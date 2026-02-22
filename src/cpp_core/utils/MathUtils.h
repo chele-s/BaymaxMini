@@ -6,21 +6,26 @@
 #include <array>
 #include <algorithm>
 #include <type_traits>
+#include <boost/math/constants/constants.hpp>
+#include <boost/math/special_functions/sin_pi.hpp>
+#include <boost/math/special_functions/cos_pi.hpp>
+#include <boost/math/distributions/normal.hpp>
+#include <boost/math/interpolators/cubic_b_spline.hpp>
 
 namespace dsp {
 
 template<typename T = double>
-constexpr T PI = T(3.14159265358979323846264338327950288);
+constexpr T PI = boost::math::constants::pi<T>();
 
 template<typename T = double>
-constexpr T TAU = T(6.28318530717958647692528676655900577);
+constexpr T TAU = boost::math::constants::two_pi<T>();
 
 template<typename T = double>
-constexpr T HALF_PI = T(1.57079632679489661923132169163975144);
+constexpr T HALF_PI = boost::math::constants::half_pi<T>();
 
 template<typename T>
 constexpr T clamp(T value, T lo, T hi) {
-    return (value < lo) ? lo : (value > hi) ? hi : value;
+    return std::clamp(value, lo, hi);
 }
 
 template<typename T>
@@ -73,17 +78,17 @@ namespace ease {
 
 template<typename T>
 constexpr T inSine(T t) {
-    return T(1) - std::cos(t * HALF_PI<T>);
+    return T(1) - boost::math::cos_pi(t * T(0.5));
 }
 
 template<typename T>
 constexpr T outSine(T t) {
-    return std::sin(t * HALF_PI<T>);
+    return boost::math::sin_pi(t * T(0.5));
 }
 
 template<typename T>
 constexpr T inOutSine(T t) {
-    return T(-0.5) * (std::cos(PI<T> * t) - T(1));
+    return T(-0.5) * (boost::math::cos_pi(t) - T(1));
 }
 
 template<typename T>
@@ -215,24 +220,24 @@ template<typename T>
 constexpr T inElastic(T t) {
     if (t <= T(0)) return T(0);
     if (t >= T(1)) return T(1);
-    return -std::pow(T(2), T(10) * t - T(10)) * std::sin((t * T(10) - T(10.75)) * TAU<T> / T(3));
+    return -std::pow(T(2), T(10) * t - T(10)) * boost::math::sin_pi((t * T(10) - T(10.75)) * T(2) / T(3));
 }
 
 template<typename T>
 constexpr T outElastic(T t) {
     if (t <= T(0)) return T(0);
     if (t >= T(1)) return T(1);
-    return std::pow(T(2), T(-10) * t) * std::sin((t * T(10) - T(0.75)) * TAU<T> / T(3)) + T(1);
+    return std::pow(T(2), T(-10) * t) * boost::math::sin_pi((t * T(10) - T(0.75)) * T(2) / T(3)) + T(1);
 }
 
 template<typename T>
 constexpr T inOutElastic(T t) {
     if (t <= T(0)) return T(0);
     if (t >= T(1)) return T(1);
-    constexpr T c = TAU<T> / T(4.5);
+    constexpr T c = T(2) / T(4.5);
     return t < T(0.5)
-        ? -(std::pow(T(2), T(20) * t - T(10)) * std::sin((T(20) * t - T(11.125)) * c)) * T(0.5)
-        : (std::pow(T(2), T(-20) * t + T(10)) * std::sin((T(20) * t - T(11.125)) * c)) * T(0.5) + T(1);
+        ? -(std::pow(T(2), T(20) * t - T(10)) * boost::math::sin_pi((T(20) * t - T(11.125)) * c)) * T(0.5)
+        : (std::pow(T(2), T(-20) * t + T(10)) * boost::math::sin_pi((T(20) * t - T(11.125)) * c)) * T(0.5) + T(1);
 }
 
 template<typename T>

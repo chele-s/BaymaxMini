@@ -4,6 +4,12 @@
 #include <cmath>
 #include <algorithm>
 #include <functional>
+#include <boost/accumulators/accumulators.hpp>
+#include <boost/accumulators/statistics/stats.hpp>
+#include <boost/accumulators/statistics/mean.hpp>
+#include <boost/accumulators/statistics/variance.hpp>
+#include <boost/accumulators/statistics/rolling_mean.hpp>
+#include <boost/accumulators/statistics/rolling_variance.hpp>
 
 class MAX30102;
 class MLX90614;
@@ -136,39 +142,41 @@ private:
 
     struct SignalQualityTracker {
         static constexpr std::size_t WINDOW = 8;
-        double samples[WINDOW] = {};
-        std::size_t writeIdx   = 0;
-        std::size_t count      = 0;
+        boost::accumulators::accumulator_set<
+            double,
+            boost::accumulators::stats<
+                boost::accumulators::tag::rolling_mean,
+                boost::accumulators::tag::rolling_variance
+            >
+        > acc;
+        std::size_t count = 0;
+
+        SignalQualityTracker() : acc(boost::accumulators::tag::rolling_window::window_size = WINDOW) {}
 
         void push(double val) {
-            samples[writeIdx] = val;
-            writeIdx = (writeIdx + 1) % WINDOW;
+            acc(val);
             if (count < WINDOW) ++count;
         }
 
         double variance() const {
             if (count < 2) return 0.0;
-            double mean = 0.0;
-            for (std::size_t i = 0; i < count; ++i) mean += samples[i];
-            mean /= static_cast<double>(count);
-            double var = 0.0;
-            for (std::size_t i = 0; i < count; ++i) {
-                double d = samples[i] - mean;
-                var += d * d;
-            }
-            return var / static_cast<double>(count);
+            return boost::accumulators::rolling_variance(acc);
         }
 
         double mean() const {
             if (count == 0) return 0.0;
-            double s = 0.0;
-            for (std::size_t i = 0; i < count; ++i) s += samples[i];
-            return s / static_cast<double>(count);
+            return boost::accumulators::rolling_mean(acc);
         }
 
         void reset() {
-            writeIdx = 0;
             count = 0;
+            acc = boost::accumulators::accumulator_set<
+                    double,
+                    boost::accumulators::stats<
+                        boost::accumulators::tag::rolling_mean,
+                        boost::accumulators::tag::rolling_variance
+                    >
+                  >(boost::accumulators::tag::rolling_window::window_size = WINDOW);
         }
     };
 

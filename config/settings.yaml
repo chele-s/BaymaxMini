@@ -1,0 +1,44 @@
+app:
+  debug_mode: false
+  name: "BaymaxMini"
+  version: "1.0.0"
+
+network:
+  zmq_pub_port: 5555
+  zmq_sub_port: 5556
+  host: "127.0.0.1"
+  tick_rate_hz: 50.0
+
+vision:
+  model_path: "config/neural_net/yolo_v8n_int8.tflite"
+  camera_index: 0
+  confidence_threshold: 0.5
+  iou_threshold: 0.45
+  labels:
+    0: "person"
+    1: "face"
+    2: "pill"
+    3: "bottle"
+    4: "ibuprofen"
+
+audio:
+  stt_model_path: "models/vosk-model-small-en-us-0.15"
+  tts_model_path: "models/piper_voices/en_US-lessac-high.onnx"
+  tts_exec_path: "piper"
+  sample_rate_in: 16000
+  sample_rate_out: 22050
+  vad_aggressiveness: 3
+  wakewords: ["baymax", "help", "pain", "doctor", "assist"]
+  input_device_index: null
+  output_device_index: null
+
+medical:
+  db_path: "config/medicines.db"
+  fever_threshold_celsius: 37.8
+  critical_battery_pct: 15.0
+
+foley:
+  sounds:
+    blip_confirm: "assets/audio/blip.wav"
+    servo_short: "assets/audio/servo.wav"
+    alert_high: "assets/audio/alert.wav"

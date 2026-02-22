@@ -1,5 +1,4 @@
 #pragma once
-
 #include "MathUtils.h"
 #include <cmath>
 #include <cstdint>
