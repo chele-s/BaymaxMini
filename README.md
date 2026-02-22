@@ -10,9 +10,13 @@
 <h1 align="center">BaymaxMini</h1>
 
 <p align="center">
+  <img src="img/Baymax_reference.jpeg" alt="Baymax Reference" width="250"/><br><br>
   <strong>A State-of-the-Art Healthcare Companion Robot</strong><br>
   <em>Real-time biometric monitoring · Expressive face animation · Intelligent medical assessment</em><br>
-  <em>Powered by a dual-layer C++17 / Python 3.11 architecture on Raspberry Pi 5</em>
+  <em>Powered by a dual-layer C++17 / Python 3.11 architecture on Raspberry Pi 5</em><br>
+  <em>Created by Gabriel Calderon</em><br>
+  <em>Requested by Elias Bautista</em><br>
+  <em><a href="https://github.com/chele-s/BaymaxMini.git">https://github.com/chele-s/BaymaxMini.git</a></em>
 </p>
 
 ---
@@ -56,7 +60,7 @@ The system runs on a **Raspberry Pi 5** and communicates across layers via **Zer
 | **Proximity** | Time-of-Flight distance sensing | VL53L1X SPAD array (up to 4m) |
 | **Expression** | 10 emotions, blinks, gaze, micro-movements | PCA9685 12-channel servo via spring dynamics |
 | **Power** | Real-time energy monitoring & protection | INA219 current/voltage sensing with hysteresis FSM |
-| **Vision** | Person detection, face analysis | YOLOv8-nano INT8 TFLite + OpenCV |
+| **Vision** | Person detection, face analysis | YOLOv8n (FP16) + Single-Pass Geometric Deduction |
 | **Audio** | Speech recognition, TTS, intent parsing | Whisper STT + edge TTS |
 | **Medical** | Health assessment, medication reminders | Rule-based clinical heuristics + patient history DB |
 | **Intelligence** | State machine, event bus, scheduling | Finite automaton with priority event dispatch |
@@ -182,6 +186,14 @@ Implemented via a sorting network (3 conditional swaps) for branchless execution
 Constrains the rate of change to protect servo mechanisms:
 
 $$y[n] = y[n-1] + \text{clamp}\big(x[n] - y[n-1],\ -R_{\text{fall}} \cdot \Delta t,\ R_{\text{rise}} \cdot \Delta t\big)$$
+
+#### 1.7 Absolute Floating-Point Precision (Boost Math)
+
+To eliminate catastrophic cancellation and rounding drift in continuous real-time execution, vital trigonometry and constants strictly leverage `boost::math`. Phase calculations use exact `boost::math::sin_pi()` evaluating at the absolute bit-level limit of the hardware architecture.
+
+#### 1.8 O(1) Rolling Variance (Boost Accumulators)
+
+Real-time PPG signal quality tracking utilizes `boost::accumulators::accumulator_set`, extracting the rolling mean and variance of human vitals in a strictly $O(1)$ time complexity window to guarantee robust noise rejection without manual CPU array-traversal memory overhead.
 
 ---
 
@@ -496,7 +508,7 @@ Real-time energy management with multi-layered protection:
 | Subsystem | Modules | Purpose |
 |-----------|---------|---------|
 | **core** | `brain.py`, `event_bus.py`, `logger.py` | Central coordinator, pub/sub events, structured logging |
-| **vision** | `camera.py`, `camera_stream.py`, `detector.py`, `face_analyzer.py`, `object_detector.py`, `visual_memory.py` | Camera capture, YOLO inference, facial expression analysis, persistent memory |
+| **vision** | `camera.py`, `detector.py`, `face_analyzer.py`, `object_detector.py` | Single YOLOv8n FP16 orchestrator, CPU-light geometric facial deduction |
 | **audio** | `stt_engine.py`, `tts_engine.py`, `intent_parser.py`, `sound_fx.py`, `audio_alerts.py` | Speech-to-text, text-to-speech, NLU intent extraction, sound effects |
 | **medical** | `patient_history.py`, `pharmacist.py`, `scheduler.py` | Patient records, medication database, reminder scheduling |
 | **communication** | `zmq_link.py`, `telemetry.py` | ZMQ bridge to C++ core, telemetry deserialization |
