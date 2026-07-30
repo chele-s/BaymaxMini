@@ -1,5 +1,5 @@
 #include "PowerSystem.h"
-#include "../drivers/INA219.h"
+#include "INA219.h"
 
 #include <cmath>
 #include <algorithm>
@@ -25,20 +25,15 @@ PowerSystem::PowerSystem(INA219& sensor)
     , m_chargeDebounce(0.0f)
     , m_initialized(false)
 {
-    m_voltageFilter.alpha = 0.05f;
-    m_currentFilter.alpha = 0.15f;
-    m_powerFilter.alpha   = 0.10f;
+    m_voltageFilter.setAlpha(0.05f);
+    m_currentFilter.setAlpha(0.15f);
+    m_powerFilter.setAlpha(0.10f);
 }
 
 bool PowerSystem::init() {
-    m_overcurrentHyst.high = m_protConfig.overcurrentTripMA;
-    m_overcurrentHyst.low  = m_protConfig.overcurrentClearMA;
-
-    m_servoStallHyst.high = m_protConfig.servoStallTripMA;
-    m_servoStallHyst.low  = m_protConfig.servoStallClearMA;
-
-    m_overTempHyst.high = m_protConfig.overTempCelsius;
-    m_overTempHyst.low  = m_protConfig.overTempClearCelsius;
+    m_overcurrentHyst.setThresholds(m_protConfig.overcurrentTripMA, m_protConfig.overcurrentClearMA);
+    m_servoStallHyst.setThresholds(m_protConfig.servoStallTripMA, m_protConfig.servoStallClearMA);
+    m_overTempHyst.setThresholds(m_protConfig.overTempCelsius, m_protConfig.overTempClearCelsius);
 
     m_lowBattHyst.low  = m_battConfig.lowThreshold;
     m_lowBattHyst.high = m_battConfig.lowThreshold + 0.3f;
@@ -48,12 +43,9 @@ bool PowerSystem::init() {
 
     readSensor();
     if (m_busVoltage > 0.1f) {
-        m_voltageFilter.value = m_busVoltage;
-        m_voltageFilter.init  = true;
-        m_currentFilter.value = m_currentMA;
-        m_currentFilter.init  = true;
-        m_powerFilter.value   = m_powerMW;
-        m_powerFilter.init    = true;
+        m_voltageFilter = dsp::ExponentialSmoother<float>(0.05f, m_busVoltage);
+        m_currentFilter = dsp::ExponentialSmoother<float>(0.15f, m_currentMA);
+        m_powerFilter = dsp::ExponentialSmoother<float>(0.10f, m_powerMW);
     }
 
     updateBatteryEstimation();
@@ -114,9 +106,7 @@ void PowerSystem::updateProtection(float dt) {
     }
 
     bool sustainedOvercurrent = m_currentSpikeAccum >= m_protConfig.currentSpikeWindowMs;
-
     bool servoStall = m_servoStallHyst.process(m_currentMA);
-
     bool overTemp = m_overTempHyst.process(m_temperature);
 
     bool lowBatt = m_lowBattHyst.process(m_busVoltage);
@@ -170,7 +160,7 @@ void PowerSystem::updateBatteryEstimation() {
 
     m_batteryPct = lookupBatteryPercent(m_cellVoltage);
 
-    float avgI = m_currentFilter.value;
+    float avgI = m_currentFilter.value();
     if (avgI > 1.0f) {
         float remainingCapacity = m_battConfig.capacityMAh * (m_batteryPct / 100.0f);
         m_runtimeHours = remainingCapacity / avgI;
@@ -183,7 +173,7 @@ void PowerSystem::updateChargeState(float dt) {
     float dI = m_currentMA - m_prevCurrentMA;
     m_prevCurrentMA = m_currentMA;
 
-    float dV = m_busVoltage - m_voltageFilter.value;
+    float dV = m_busVoltage - m_voltageFilter.value();
 
     power::ChargeState candidate = power::ChargeState::UNKNOWN;
 
@@ -254,12 +244,9 @@ void PowerSystem::setBatteryConfig(const power::BatteryConfig& config) {
 
 void PowerSystem::setProtectionConfig(const power::ProtectionConfig& config) {
     m_protConfig = config;
-    m_overcurrentHyst.high = config.overcurrentTripMA;
-    m_overcurrentHyst.low  = config.overcurrentClearMA;
-    m_servoStallHyst.high  = config.servoStallTripMA;
-    m_servoStallHyst.low   = config.servoStallClearMA;
-    m_overTempHyst.high    = config.overTempCelsius;
-    m_overTempHyst.low     = config.overTempClearCelsius;
+    m_overcurrentHyst.setThresholds(config.overcurrentTripMA, config.overcurrentClearMA);
+    m_servoStallHyst.setThresholds(config.servoStallTripMA, config.servoStallClearMA);
+    m_overTempHyst.setThresholds(config.overTempCelsius, config.overTempClearCelsius);
 }
 
 void PowerSystem::setCallbacks(const power::PowerCallbacks& cb) {
@@ -277,7 +264,7 @@ power::PowerSnapshot PowerSystem::snapshot() const {
     snap.powerMW           = m_powerMW;
     snap.batteryPercent    = m_batteryPct;
     snap.runtimeHours      = m_runtimeHours;
-    snap.avgCurrentMA      = m_currentFilter.value;
+    snap.avgCurrentMA      = m_currentFilter.value();
     snap.peakCurrentMA     = m_peakCurrentMA;
     snap.cellVoltage       = m_cellVoltage;
     snap.energyConsumedMWh = m_energyMWh;
@@ -293,7 +280,7 @@ float              PowerSystem::powerMW()            const { return m_powerMW; }
 float              PowerSystem::batteryPercent()     const { return m_batteryPct; }
 float              PowerSystem::runtimeHours()       const { return m_runtimeHours; }
 float              PowerSystem::cellVoltage()        const { return m_cellVoltage; }
-float              PowerSystem::avgCurrentMA()       const { return m_currentFilter.value; }
+float              PowerSystem::avgCurrentMA()       const { return m_currentFilter.value(); }
 float              PowerSystem::peakCurrentMA()      const { return m_peakCurrentMA; }
 float              PowerSystem::energyConsumedMWh()  const { return m_energyMWh; }
 power::ChargeState PowerSystem::chargeState()        const { return m_chargeState; }

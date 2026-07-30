@@ -1,6 +1,6 @@
 #include "FaceController.h"
-#include "../drivers/PCA9685.h"
-#include "../utils/MathUtils.h"
+#include "PCA9685.h"
+#include "MathUtils_Portable.h"
 
 using namespace face;
 
@@ -129,7 +129,7 @@ float FaceController::asymmetricBlinkCurve(float t, bool closing) const {
     }
 
     float fast = dsp::ease::outCubic(t);
-    float overshoot = 1.0f + 0.03f * boost::math::sin_pi(t);
+    float overshoot = 1.0f + 0.03f * dsp::sin_pi(t);
     return fast * overshoot;
 }
 
@@ -381,7 +381,7 @@ void FaceController::updateSleep(double dt) {
     m_sleep.breathPhase += static_cast<float>(dt) * 0.2f;
     if (m_sleep.breathPhase > 1.0f) m_sleep.breathPhase -= 1.0f;
 
-    float sleepBreath = 0.05f + 0.03f * boost::math::sin_pi(m_sleep.breathPhase * 2.0f);
+    float sleepBreath = 0.05f + 0.03f * dsp::sin_pi(m_sleep.breathPhase * 2.0f);
     m_leftUpperLid.target  = sleepBreath;
     m_rightUpperLid.target = sleepBreath + 0.005f * organicNoise(m_totalTime * 0.3f);
 
@@ -427,7 +427,7 @@ void FaceController::updateAlert(double dt) {
     m_alertPulse += static_cast<float>(dt) * 3.0f;
     if (m_alertPulse > 1.0f) m_alertPulse -= 1.0f;
 
-    float pulse = 0.85f + 0.15f * boost::math::sin_pi(m_alertPulse * 2.0f);
+    float pulse = 0.85f + 0.15f * dsp::sin_pi(m_alertPulse * 2.0f);
     m_leftUpperLid.target  = pulse;
     m_rightUpperLid.target = pulse;
 }
@@ -443,9 +443,9 @@ void FaceController::updateMicroMovements(double dt) {
     float gazeJitterY = organicNoise(m_microPhase * m_microConfig.gazeJitterFreqHz * dsp::TAU<float> + 1.7f)
                        * m_microConfig.gazeJitterAmp;
 
-    float gazeDriftX = boost::math::sin_pi(m_microPhase * m_microConfig.gazeDriftFreqHz * 2.0f)
+    float gazeDriftX = dsp::sin_pi(m_microPhase * m_microConfig.gazeDriftFreqHz * 2.0f)
                       * m_microConfig.gazeDriftAmp;
-    float gazeDriftY = boost::math::sin_pi(m_microPhase * m_microConfig.gazeDriftFreqHz * 1.4f + 0.9f / dsp::PI<float>)
+    float gazeDriftY = dsp::sin_pi(m_microPhase * m_microConfig.gazeDriftFreqHz * 1.4f + 0.9f / dsp::PI<float>)
                       * m_microConfig.gazeDriftAmp;
 
     m_gazeX.target = dsp::clamp(m_gazeX.target + gazeJitterX + gazeDriftX, -1.0f, 1.0f);
@@ -465,7 +465,7 @@ void FaceController::updateMicroMovements(double dt) {
 }
 
 void FaceController::composeFinalPose() {
-    float breathOffset = boost::math::sin_pi(m_breathPhase * 0.8f) * m_breathIntensity * 0.02f;
+    float breathOffset = dsp::sin_pi(m_breathPhase * 0.8f) * m_breathIntensity * 0.02f;
 
     m_currentPose.leftEye.upperLid  = dsp::clamp(m_leftUpperLid.current + breathOffset, 0.0f, 1.0f);
     m_currentPose.leftEye.lowerLid  = dsp::clamp(m_leftLowerLid.current, 0.0f, 1.0f);

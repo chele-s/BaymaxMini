@@ -4,12 +4,7 @@
 #include <cmath>
 #include <algorithm>
 #include <functional>
-#include <boost/accumulators/accumulators.hpp>
-#include <boost/accumulators/statistics/stats.hpp>
-#include <boost/accumulators/statistics/mean.hpp>
-#include <boost/accumulators/statistics/variance.hpp>
-#include <boost/accumulators/statistics/rolling_mean.hpp>
-#include <boost/accumulators/statistics/rolling_variance.hpp>
+#include "MathUtils_Portable.h"
 
 class MAX30102;
 class MLX90614;
@@ -119,67 +114,6 @@ public:
     uint32_t successfulMeasurements() const;
 
 private:
-    struct EMADouble {
-        double value = 0.0;
-        double alpha = 0.1;
-        bool   init  = false;
-
-        double process(double input) {
-            if (!init) {
-                value = input;
-                init = true;
-                return value;
-            }
-            value += alpha * (input - value);
-            return value;
-        }
-
-        void reset() {
-            value = 0.0;
-            init  = false;
-        }
-    };
-
-    struct SignalQualityTracker {
-        static constexpr std::size_t WINDOW = 8;
-        boost::accumulators::accumulator_set<
-            double,
-            boost::accumulators::stats<
-                boost::accumulators::tag::rolling_mean,
-                boost::accumulators::tag::rolling_variance
-            >
-        > acc;
-        std::size_t count = 0;
-
-        SignalQualityTracker() : acc(boost::accumulators::tag::rolling_window::window_size = WINDOW) {}
-
-        void push(double val) {
-            acc(val);
-            if (count < WINDOW) ++count;
-        }
-
-        double variance() const {
-            if (count < 2) return 0.0;
-            return boost::accumulators::rolling_variance(acc);
-        }
-
-        double mean() const {
-            if (count == 0) return 0.0;
-            return boost::accumulators::rolling_mean(acc);
-        }
-
-        void reset() {
-            count = 0;
-            acc = boost::accumulators::accumulator_set<
-                    double,
-                    boost::accumulators::stats<
-                        boost::accumulators::tag::rolling_mean,
-                        boost::accumulators::tag::rolling_variance
-                    >
-                  >(boost::accumulators::tag::rolling_window::window_size = WINDOW);
-        }
-    };
-
     void stateIdle(float dt);
     void stateDetecting(float dt);
     void stateStabilizing(float dt);
@@ -197,19 +131,19 @@ private:
     MAX30102& m_pulseOx;
     MLX90614& m_tempSensor;
 
-    vitals::MeasureConfig  m_config;
+    vitals::MeasureConfig   m_config;
     vitals::VitalsCallbacks m_callbacks;
 
     vitals::MeasureState m_state;
     vitals::VitalsData   m_current;
     vitals::VitalsData   m_lastComplete;
 
-    EMADouble m_hrFilter;
-    EMADouble m_spo2Filter;
-    EMADouble m_tempFilter;
+    dsp::ExponentialSmoother<double> m_hrFilter;
+    dsp::ExponentialSmoother<double> m_spo2Filter;
+    dsp::ExponentialSmoother<double> m_tempFilter;
 
-    SignalQualityTracker m_hrQuality;
-    SignalQualityTracker m_spo2Quality;
+    dsp::RollingStats<double, 8> m_hrQuality;
+    dsp::RollingStats<double, 8> m_spo2Quality;
 
     float m_stateTimer;
     float m_measureTimer;

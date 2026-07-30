@@ -1,5 +1,5 @@
 #include "MLX90614.h"
-#include "I2C_Bus.h"
+#include "I2CBus.h"
 
 namespace Reg {
     constexpr uint8_t RAM_AMBIENT  = 0x06;

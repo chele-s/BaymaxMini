@@ -1,19 +1,19 @@
 <p align="center">
-  <img src="https://img.shields.io/badge/Platform-Raspberry%20Pi%205-C51A4A?style=for-the-badge&logo=raspberrypi&logoColor=white" alt="Platform"/>
+  <img src="https://img.shields.io/badge/Platform-ESP32--S3%20%7C%20Raspberry%20Pi%205%20%7C%20Laptop-E7352C?style=for-the-badge&logo=espressif&logoColor=white" alt="Platform"/>
   <img src="https://img.shields.io/badge/C++-17-00599C?style=for-the-badge&logo=cplusplus&logoColor=white" alt="C++17"/>
   <img src="https://img.shields.io/badge/Python-3.11+-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python"/>
-  <img src="https://img.shields.io/badge/Build-CMake%203.22+-064F8C?style=for-the-badge&logo=cmake&logoColor=white" alt="CMake"/>
-  <img src="https://img.shields.io/badge/IPC-ZeroMQ-DF0000?style=for-the-badge&logo=zeromq&logoColor=white" alt="ZeroMQ"/>
+  <img src="https://img.shields.io/badge/Build-PlatformIO%20%7C%20CMake-064F8C?style=for-the-badge&logo=cmake&logoColor=white" alt="Build"/>
+  <img src="https://img.shields.io/badge/Bindings-pybind11-4B8BBE?style=for-the-badge&logo=python&logoColor=white" alt="pybind11"/>
   <img src="https://img.shields.io/badge/License-MIT-green?style=for-the-badge" alt="License"/>
 </p>
 
-<h1 align="center">BaymaxMini</h1>
+<h1 align="center">BaymaxMini v2.0</h1>
 
 <p align="center">
   <img src="img/Baymax_reference.jpeg" alt="Baymax Reference" width="250"/><br><br>
   <strong>A State-of-the-Art Healthcare Companion Robot</strong><br>
   <em>Real-time biometric monitoring · Expressive face animation · Intelligent medical assessment</em><br>
-  <em>Powered by a dual-layer C++17 / Python 3.11 architecture on Raspberry Pi 5</em><br>
+  <em>Dual Architecture Support: Monolithic (Raspberry Pi 5) & Distributed v2.0 (ESP32-S3 Node + Laptop C++/Python Brain)</em><br>
   <em>Created by Gabriel Calderon</em><br>
   <em>Requested by Elias Bautista</em><br>
   <em><a href="https://github.com/chele-s/BaymaxMini.git">https://github.com/chele-s/BaymaxMini.git</a></em>
@@ -25,21 +25,51 @@
 
 - [Overview](#overview)
 - [System Architecture](#system-architecture)
+  - [v2.0 Distributed Architecture (ESP32-S3 + Laptop)](#v20-distributed-architecture-esp32-s3--laptop)
+  - [v1.0 Monolithic Architecture (Raspberry Pi 5)](#v10-monolithic-architecture-raspberry-pi-5)
 - [Hardware Layer](#hardware-layer)
+  - [I²C Sensor Suite](#i²c-sensor-suite)
+  - [Battery System](#battery-system)
 - [Mathematical Foundations](#mathematical-foundations)
-  - [Digital Signal Processing](#1-digital-signal-processing-dsp)
-  - [Photoplethysmography Pipeline](#2-photoplethysmography-ppg-pipeline)
+  - [Digital Signal Processing (DSP)](#1-digital-signal-processing-dsp)
+    - [1.1 Biquad Filter (Second-Order IIR)](#11-biquad-filter-second-order-iir)
+    - [1.2 Cascaded Butterworth (Nth-Order)](#12-cascaded-butterworth-nth-order)
+    - [1.3 Exponential Moving Average (EMA)](#13-exponential-moving-average-ema)
+    - [1.4 DC Blocker (First-Order Highpass)](#14-dc-blocker-first-order-highpass)
+    - [1.5 Median Filter (Order 3)](#15-median-filter-order-3)
+    - [1.6 Slew Rate Limiter](#16-slew-rate-limiter)
+    - [1.7 Absolute Floating-Point Precision (Boost Math)](#17-absolute-floating-point-precision-boost-math)
+    - [1.8 O(1) Rolling Variance (Boost Accumulators)](#18-o1-rolling-variance-boost-accumulators)
+  - [Photoplethysmography (PPG) Pipeline](#2-photoplethysmography-ppg-pipeline)
+    - [2.1 Signal Quality Metric](#21-signal-quality-metric)
+    - [2.2 Adaptive Peak Detection](#22-adaptive-peak-detection)
   - [Spring-Damper Dynamics](#3-spring-damper-dynamics)
   - [Second-Order Dynamics System](#4-second-order-dynamics-system)
   - [Easing & Interpolation Theory](#5-easing--interpolation-theory)
+    - [5.1 Hermite Spline](#51-hermite-spline)
+    - [5.2 Catmull-Rom Spline](#52-catmull-rom-spline)
+    - [5.3 Smoothstep & Smootherstep](#53-smoothstep--smootherstep)
+    - [5.4 Complete Easing Library (32 functions)](#54-complete-easing-library-32-functions)
   - [Cubic Bézier Curve Solver](#6-cubic-bézier-curve-solver)
   - [Power Management Mathematics](#7-power-management-mathematics)
-  - [SpO₂ Computation (Beer-Lambert)](#8-spo₂-computation-beer-lambert-law)
+    - [7.1 Battery State-of-Charge (SoC)](#71-battery-state-of-charge-soc)
+    - [7.2 Runtime Estimation](#72-runtime-estimation)
+    - [7.3 Hysteresis State Machine](#73-hysteresis-state-machine)
+  - [SpO₂ Computation (Beer-Lambert Law)](#8-spo₂-computation-beer-lambert-law)
   - [INA219 Calibration Mathematics](#9-ina219-calibration-mathematics)
   - [Servo Kinematics](#10-servo-kinematics)
-- [C++ Real-Time Core](#c-real-time-core-src-cpp_core)
-- [Python Brain](#python-brain-src-python_brain)
-- [IPC Protocol](#ipc-protocol)
+- [C++ Real-Time Core & Firmware](#c-real-time-core--firmware)
+  - [ESP32-S3 Firmware Node (`firmware/esp32_baymax_node`)](#esp32-s3-firmware-node-firmwareesp32_baymax_node)
+  - [Laptop Native C++ Module (`src/cpp_core/`)](#laptop-native-c-module-srccpp_core)
+  - [Tick Architecture](#tick-architecture)
+  - [State Machine](#state-machine)
+  - [Module: FaceController](#module-facecontroller)
+  - [Module: VitalsMonitor](#module-vitalsmonitor)
+  - [Module: PowerSystem](#module-powersystem)
+- [Python Brain (`src/python_brain`)](#python-brain-srcpython_brain)
+- [Communication & IPC Protocols](#communication--ipc-protocols)
+  - [USB Binary Serial Protocol (ESP32 ↔ Laptop @ 921600 Baud)](#usb-binary-serial-protocol-esp32--laptop--921600-baud)
+  - [ZeroMQ PUB/SUB Protocol (v1.0 Monolithic)](#zeromq-pubsub-protocol-v10-monolithic)
 - [Build & Deploy](#build--deploy)
 - [Configuration](#configuration)
 - [Project Structure](#project-structure)
@@ -48,9 +78,11 @@
 
 ## Overview
 
-**BaymaxMini** is a healthcare companion robot inspired by the fictional nurse-bot _Baymax_ from Disney's _Big Hero 6_. It implements a **hard real-time control loop** in C++17 running at 50 Hz on bare Linux, coupled with a **high-level Python brain** that handles natural language understanding, computer vision, medical reasoning, and emotional intelligence.
+**BaymaxMini** is a healthcare companion robot inspired by the fictional nurse-bot _Baymax_ from Disney's _Big Hero 6_. It implements a **hard real-time control loop** in C++17 running at 50 Hz, coupled with a **high-level Python brain** that handles natural language understanding, computer vision, medical reasoning, and emotional intelligence.
 
-The system runs on a **Raspberry Pi 5** and communicates across layers via **ZeroMQ PUB/SUB** with checksummed binary telemetry frames, ensuring < 1ms IPC latency while maintaining full decoupling between the deterministic hardware layer and the non-deterministic AI layer.
+The system supports two deployment models:
+- **v2.0 Distributed Architecture (Recommended)**: An **ESP32-S3** embedded node handles deterministically timed 50 Hz I²C sensor polling, servo control, overcurrent protection, and MJPEG video streaming. A **Host Laptop** runs native `pybind11` C++ extensions for high-precision biomedical signal analysis (HRV, FFT, stress index) and Python for AI, vision, and voice processing.
+- **v1.0 Monolithic Architecture**: Runs entirely on a **Raspberry Pi 5** communicating across processes via ZeroMQ PUB/SUB.
 
 ### Key Capabilities
 
@@ -68,6 +100,45 @@ The system runs on a **Raspberry Pi 5** and communicates across layers via **Zer
 ---
 
 ## System Architecture
+
+### v2.0 Distributed Architecture (ESP32-S3 + Laptop)
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                      LAPTOP BRAIN                           │
+│  ┌───────────────────────────────────────────────────────┐  │
+│  │                Python Brain (AI / UI)                 │  │
+│  │   Vision (YOLOv8) · Audio (Whisper/TTS) · StateMachine│  │
+│  └───────────────────────────┬───────────────────────────┘  │
+│                              │ import baymax_native         │
+│  ┌───────────────────────────▼───────────────────────────┐  │
+│  │               baymax_native (pybind11)                │  │
+│  │   SerialLink (Background RX) · AdvancedVitalsAnalyzer │  │
+│  └───────────────────────────┬───────────────────────────┘  │
+└──────────────────────────────┼──────────────────────────────┘
+                               │ USB Serial @ 921600 Baud (Telemetry/Cmd)
+                               │ Wi-Fi MJPEG Stream @ Port 81 (Video)
+┌──────────────────────────────▼──────────────────────────────┐
+│                    ESP32-S3 NODE                            │
+│  ┌───────────────────────────────────────────────────────┐  │
+│  │  Core 1 (50 Hz Real-Time Loop)                        │  │
+│  │  ├─ PowerSystem.update()                              │  │
+│  │  ├─ VitalsMonitor.update()                            │  │
+│  │  ├─ FaceController.update()                           │  │
+│  │  └─ VL53L1X Distance Read                             │  │
+│  │                                                       │  │
+│  │  Core 0 (Comms & Camera Task)                         │  │
+│  │  ├─ SerialProtocol RX/TX (Checksummed binary frames)  │  │
+│  │  └─ CamServer (HTTP MJPEG Streaming on port 81)       │  │
+│  └───────────────────────────┬───────────────────────────┘  │
+│                              │ I²C Bus (400 kHz)            │
+│  ┌───────────────────────────▼───────────────────────────┐  │
+│  │ PCA9685 · VL53L1X · MAX30102 · MLX90614 · INA219      │  │
+│  └───────────────────────────────────────────────────────┘  │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### v1.0 Monolithic Architecture (Raspberry Pi 5)
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -179,7 +250,7 @@ Non-linear filter for impulse noise rejection. For three samples $\{a, b, c\}$:
 
 $$y = \text{median}(a, b, c)$$
 
-Implemented via a sorting network (3 conditional swaps) for branchless execution on ARM.
+Implemented via a sorting network (3 conditional swaps) for branchless execution.
 
 #### 1.6 Slew Rate Limiter
 
@@ -419,7 +490,20 @@ At $f_{\text{PWM}} = 50$Hz: $\text{ticks} = \text{PW}_{\mu s} \times 0.2048$
 
 ---
 
-## C++ Real-Time Core (`src/cpp_core`)
+## C++ Real-Time Core & Firmware
+
+### ESP32-S3 Firmware Node (`firmware/esp32_baymax_node`)
+
+Built with **PlatformIO** for ESP32-S3 (Dual-Core LX7 @ 240MHz, 8MB PSRAM, 16MB Flash):
+- **Core 1**: Dedicated real-time 50 Hz FreeRTOS tick loop for I²C sensor reading, spring-damper facial servo kinematics, power hysteresis FSM, and overcurrent protection.
+- **Core 0**: Asynchronous serial communication handling binary `TelemetryFrame` / `CommandFrame` packets at 921600 baud, plus an HTTP MJPEG camera server on port 81 (`CamServer.h`).
+- **Autonomous Mode**: Automatic fallback when the host brain disconnects or times out (> 2s), executing organic blinks, eye jitter, and low-battery sleep routines.
+
+### Laptop Native C++ Module (`src/cpp_core/`)
+
+- **`SerialLink`**: Multi-platform serial port driver (Win32 COM API & Linux `termios`) running a background thread for zero-latency frame reception at 921600 baud.
+- **`AdvancedVitalsAnalyzer`**: High-performance biomedical signal processing using Boost (HRV analysis: SDNN, RMSSD, pNN50, LF/HF ratio, Stress Index).
+- **`baymax_native`**: Exposes C++ classes directly to Python using `pybind11`.
 
 ### Tick Architecture
 
@@ -429,9 +513,9 @@ The core runs a **fixed-timestep loop** at 50 Hz ($\Delta t = 20$ms) with overru
 while (running) {
     nextTick += 20ms
     readSensors()        ─► I²C reads from all 5 chips
-    processCommands()    ─► ZMQ SUB (non-blocking)
+    processCommands()    ─► Serial RX / ZMQ SUB (non-blocking)
     updateLogic()        ─► FSM + spring dynamics + animation
-    writeOutputs()       ─► Telemetry PUB + servo PWM
+    writeOutputs()       ─► Telemetry TX / ZMQ PUB + servo PWM
     sleep_until(nextTick)
     if (overrun > 3 ticks) { resync; overrun_count++ }
 }
@@ -440,7 +524,7 @@ while (running) {
 ### State Machine
 
 ```
-    BOOT ──(ZMQ connected)──► CONNECTED ──(brain timeout 2s)──► AUTONOMOUS
+    BOOT ──(Connected)──────► CONNECTED ──(brain timeout 2s)──► AUTONOMOUS
       ▲                           ▲                                  │
       │                           └──────(CMD received)──────────────┘
       │
@@ -508,67 +592,81 @@ Real-time energy management with multi-layered protection:
 | Subsystem | Modules | Purpose |
 |-----------|---------|---------|
 | **core** | `brain.py`, `event_bus.py`, `logger.py` | Central coordinator, pub/sub events, structured logging |
-| **vision** | `camera.py`, `detector.py`, `face_analyzer.py`, `object_detector.py` | Single YOLOv8n FP16 orchestrator, CPU-light geometric facial deduction |
+| **vision** | `camera.py`, `detector.py`, `face_analyzer.py`, `object_detector.py` | Single YOLOv8n FP16 orchestrator, HTTP MJPEG stream + USB webcam fallback |
 | **audio** | `stt_engine.py`, `tts_engine.py`, `intent_parser.py`, `sound_fx.py`, `audio_alerts.py` | Speech-to-text, text-to-speech, NLU intent extraction, sound effects |
 | **medical** | `patient_history.py`, `pharmacist.py`, `scheduler.py` | Patient records, medication database, reminder scheduling |
-| **communication** | `zmq_link.py`, `telemetry.py` | ZMQ bridge to C++ core, telemetry deserialization |
+| **communication** | `esp32_link.py`, `zmq_link.py`, `telemetry.py` | `baymax_native` bridge to ESP32 node / ZeroMQ bridge to Pi 5 core |
 | **logic** | `state_machine.py`, `scheduler.py` | Behavioral FSM, task scheduling |
 | **config** | `settings.py`, `db_migrate.py` | YAML config loader, database migrations |
 | **utils** | `time_utils.py` | Timezone-aware time helpers |
 
 ---
 
-## IPC Protocol
+## Communication & IPC Protocols
 
-### Telemetry Frame (C++ → Python, 50 Hz)
+### USB Binary Serial Protocol (ESP32 ↔ Laptop @ 921600 Baud)
 
-Binary packed struct with **djb2 checksum** verification:
+High-speed packed binary protocol aligned to 4-byte boundaries with additive checksum validation:
 
-| Field | Type | Offset | Description |
-|-------|------|--------|-------------|
-| `magic` | u32 | 0 | `0xBABE0001` |
-| `version` | u32 | 4 | Protocol version |
-| `timestamp_us` | u64 | 8 | Microsecond timestamp |
-| `sequence` | u32 | 16 | Monotonic counter |
-| `distance_mm` | f32 | 20 | VL53L1X range |
-| `heart_rate_bpm` | f32 | 24 | Filtered heart rate |
-| `spo2_percent` | f32 | 28 | Blood oxygen % |
-| `skin_temp_c` | f32 | 32 | Body temperature |
-| `bus_voltage_v` | f32 | 40 | Battery voltage |
-| `battery_pct` | f32 | 52 | State of charge |
-| `eyelid_openness` | f32 | 56 | Current lid state |
-| `gaze_x` / `gaze_y` | f32 | 60, 64 | Eye direction |
-| `state` | u8 | — | System state enum |
-| `expression` | u8 | — | Current face expression |
-| `alert` | u8 | — | Alert level |
-| `checksum` | u32 | last | djb2 integrity check |
+| Frame Type | Magic Number | Size | Direction | Frequency |
+|---|---|---|---|---|
+| **TelemetryFrame** | `0xBABE0001` | 96 bytes | ESP32 → Laptop | 50 Hz |
+| **CommandFrame** | `0xBABE0002` | 44 bytes | Laptop → ESP32 | On Command |
+| **SystemStatus** | `0xBABE0003` | 32 bytes | ESP32 → Laptop | 1 Hz |
+| **Heartbeat** | `0xBABE0004` | 16 bytes | Bidirectional | 2 Hz |
 
-### Command Frame (Python → C++)
+### ZeroMQ PUB/SUB Protocol (v1.0 Monolithic)
 
-Supports: `SET_EXPRESSION`, `SET_EYELID`, `TRIGGER_BLINK`, `SET_GAZE`, `SET_BREATH`, `SPEAK`, `SET_LED_COLOR`, `PLAY_ANIMATION`, `EMERGENCY_STOP`, `SHUTDOWN`
+For the Raspberry Pi 5 monolithic deployment, inter-process communication uses ZeroMQ sockets:
+- `tcp://127.0.0.1:5555`: Python → C++ commands
+- `tcp://127.0.0.1:5556`: C++ → Python 50 Hz telemetry frame publishing
 
 ---
 
 ## Build & Deploy
 
-### Prerequisites
+### Option A: v2.0 Distributed Mode (ESP32-S3 Node + Laptop)
+
+#### 1. Flash ESP32 Firmware
+
+```bash
+cd firmware/esp32_baymax_node
+pio run -t upload
+```
+
+#### 2. Build Laptop Native C++ Module (`baymax_native`)
+
+```bash
+mkdir build && cd build
+cmake .. -DCMAKE_BUILD_TYPE=Release
+cmake --build . --config Release
+```
+
+#### 3. Run Python Brain
+
+```bash
+python -m src.python_brain.main
+```
+
+---
+
+### Option B: v1.0 Monolithic Mode (Raspberry Pi 5)
+
+#### Prerequisites
 
 ```bash
 sudo apt-get install build-essential cmake libzmq3-dev nlohmann-json3-dev
 pip install pyzmq pyyaml numpy opencv-python-headless tflite-runtime
 ```
 
-### Build C++ Core
+#### Build & Run
 
 ```bash
 mkdir build && cd build
 cmake .. -DCMAKE_BUILD_TYPE=Release
 make -j$(nproc)
-```
 
-### Run
-
-```bash
+# Run C++ Core and Python Brain
 ./build/baymax_core &
 python3 src/python_brain/main.py
 ```
@@ -579,6 +677,7 @@ python3 src/python_brain/main.py
 
 | File | Purpose |
 |------|---------|
+| `configs/system.yaml` | v2.0 global settings (Serial COM port, baud rate, Wi-Fi MJPEG URL) |
 | `configs/sensors_config.yaml` | I²C addresses, sample rates, filter parameters |
 | `configs/vision_params.yaml` | YOLO confidence thresholds, camera resolution |
 | `configs/reminders.json` | Medication and appointment schedule |
@@ -591,46 +690,59 @@ python3 src/python_brain/main.py
 BaymaxMini/
 ├── CMakeLists.txt
 ├── README.md
+├── SCHEMATIC_ESP32.md
 ├── requirements.txt
 ├── configs/
-│   ├── sensors_config.yaml
-│   ├── vision_params.yaml
-│   └── reminders.json
+│   ├── system.yaml                     v2.0 System configuration
+│   ├── sensors_config.yaml             I²C addresses & sensor tuning
+│   ├── vision_params.yaml              YOLO & camera thresholds
+│   └── reminders.json                  Medication schedule
 ├── models/
-│   └── yolo_nano_int8.tflite
-├── scripts/
-├── src/
-│   ├── cpp_core/
-│   │   ├── main.cpp                    Orchestrator + tick loop
-│   │   ├── drivers/
-│   │   │   ├── I2C_Bus.{cpp,h}        Linux I²C ioctl wrapper
-│   │   │   ├── PCA9685.{cpp,h}        16-ch PWM servo driver
-│   │   │   ├── VL53L1X.{cpp,h}        Time-of-Flight ranging
-│   │   │   ├── MAX30102.{cpp,h}       Pulse oximetry + HR
-│   │   │   ├── MLX90614.{cpp,h}       IR thermometry
-│   │   │   └── INA219.{cpp,h}         Power monitoring
-│   │   ├── modules/
-│   │   │   ├── FaceController.{cpp,h}  Expressive servo animation
-│   │   │   ├── VitalsMonitor.{cpp,h}   Clinical vitals pipeline
-│   │   │   └── PowerSystem.{cpp,h}     Energy management FSM
-│   │   ├── interfaces/
-│   │   │   └── I_Sensor.h              Abstract sensor + registry
-│   │   ├── ipc/
-│   │   │   └── SharedData.h            Binary IPC protocol
-│   │   └── utils/
-│   │       ├── MathUtils.h             DSP, filters, springs, Vec2
-│   │       ├── DigitalFilter.h         PPG chain, peak detection
-│   │       └── Easing.h                Animation, Bézier, timelines
-│   └── python_brain/
-│       ├── main.py                     Brain entry point
-│       ├── core/                       Event bus, state, logging
-│       ├── vision/                     Camera, YOLO, face analysis
-│       ├── audio/                      STT, TTS, intent parsing
-│       ├── medical/                    Patient history, meds
-│       ├── communication/             ZMQ link, telemetry decode
-│       ├── logic/                      Behavioral state machine
-│       ├── config/                     Settings, DB migration
-│       └── utils/                      Time utilities
+│   └── yolo_nano_int8.tflite           YOLO model
+├── firmware/                           v2.0 ESP32-S3 Firmware Node
+│   └── esp32_baymax_node/
+│       ├── platformio.ini              PlatformIO config
+│       ├── include/
+│       │   ├── Config.h               Hardware constants & pinouts
+│       │   ├── SerialProtocol.h        921600 baud serial protocol
+│       │   └── CamServer.h             HTTP MJPEG camera server
+│       ├── lib/                        Ported hardware & logic libraries
+│       │   ├── FaceController/
+│       │   ├── I2CBus/
+│       │   ├── INA219/
+│       │   ├── MAX30102/
+│       │   ├── MLX90614/
+│       │   ├── MathUtils/
+│       │   ├── PCA9685/
+│       │   ├── PowerSystem/
+│       │   ├── SharedData/
+│       │   ├── VL53L1X/
+│       │   └── VitalsMonitor/
+│       └── src/
+│           └── main.cpp                Dual-Core FreeRTOS orchestrator
+└── src/                                Laptop Source Code
+    ├── cpp_core/                       Native C++ Core & PyBind11
+    │   ├── analysis/                   HRV & Biomedical analysis
+    │   │   ├── AdvancedVitalsAnalyzer.h
+    │   │   └── AdvancedVitalsAnalyzer.cpp
+    │   ├── bindings/                   pybind11 Python extension
+    │   │   └── baymax_native.cpp
+    │   ├── serial/                     Cross-platform Serial link
+    │   │   ├── SerialLink.h
+    │   │   └── SerialLink.cpp
+    │   ├── interfaces/                 Abstract I_Sensor interface
+    │   ├── ipc/                        Binary SharedData structures
+    │   └── utils/                      MathUtils, DigitalFilter, Easing
+    └── python_brain/                   Python AI & Reasoning Layer
+        ├── main.py                     Brain entry point
+        ├── core/                       Event bus, state, logging
+        ├── vision/                     Camera, YOLO, face analysis
+        ├── audio/                      STT, TTS, intent parsing
+        ├── medical/                    Patient history, meds
+        ├── communication/             esp32_link.py
+        ├── logic/                      Behavioral state machine
+        ├── config/                     Settings, DB migration
+        └── utils/                      Time utilities
 ```
 
 ---

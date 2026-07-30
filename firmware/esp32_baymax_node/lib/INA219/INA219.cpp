@@ -1,5 +1,5 @@
 #include "INA219.h"
-#include "I2C_Bus.h"
+#include "I2CBus.h"
 
 #include <cmath>
 #include <algorithm>

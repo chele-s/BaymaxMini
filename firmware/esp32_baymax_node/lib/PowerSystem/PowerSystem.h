@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <array>
 #include <functional>
+#include "MathUtils_Portable.h"
 
 class INA219;
 
@@ -117,22 +118,6 @@ public:
     uint32_t readErrorCount() const;
 
 private:
-    struct HysteresisState {
-        bool  active = false;
-        float high   = 0.0f;
-        float low    = 0.0f;
-
-        bool process(float value) {
-            if (active) {
-                if (value < low) active = false;
-            } else {
-                if (value > high) active = true;
-            }
-            return active;
-        }
-
-        void reset() { active = false; }
-    };
 
     struct VoltageHysteresis {
         bool  active = false;
@@ -149,27 +134,6 @@ private:
         }
 
         void reset() { active = false; }
-    };
-
-    struct EMAFilter {
-        float value = 0.0f;
-        float alpha = 0.1f;
-        bool  init  = false;
-
-        float process(float input) {
-            if (!init) {
-                value = input;
-                init = true;
-                return value;
-            }
-            value += alpha * (input - value);
-            return value;
-        }
-
-        void reset() {
-            value = 0.0f;
-            init  = false;
-        }
     };
 
     void readSensor();
@@ -202,13 +166,13 @@ private:
     float m_energyMWh;
     float m_temperature;
 
-    EMAFilter m_voltageFilter;
-    EMAFilter m_currentFilter;
-    EMAFilter m_powerFilter;
+    dsp::ExponentialSmoother<float> m_voltageFilter;
+    dsp::ExponentialSmoother<float> m_currentFilter;
+    dsp::ExponentialSmoother<float> m_powerFilter;
 
-    HysteresisState m_overcurrentHyst;
-    HysteresisState m_servoStallHyst;
-    HysteresisState m_overTempHyst;
+    dsp::Hysteresis<float> m_overcurrentHyst;
+    dsp::Hysteresis<float> m_servoStallHyst;
+    dsp::Hysteresis<float> m_overTempHyst;
     VoltageHysteresis m_lowBattHyst;
     VoltageHysteresis m_critBattHyst;
 

@@ -1,10 +1,10 @@
 #include "MAX30102.h"
-#include "I2C_Bus.h"
+#include "I2CBus.h"
 
 #include <cmath>
 #include <cstring>
 #include <algorithm>
-#include <unistd.h>
+#include <Arduino.h>
 
 namespace Reg {
     constexpr uint8_t INT_STATUS1   = 0x00;
@@ -42,14 +42,9 @@ namespace Fifo {
     constexpr uint8_t DATA_RDY_EN   = 0x40;
 }
 
-constexpr uint8_t  ADC_RANGE_4096   = 0x00;
-constexpr uint8_t  ADC_RANGE_8192   = 0x20;
 constexpr uint8_t  ADC_RANGE_16384  = 0x40;
-constexpr uint8_t  ADC_RANGE_32768  = 0x60;
-
 constexpr uint8_t  SAMPLE_AVG_4     = 0x40;
 constexpr uint8_t  FIFO_ROLLOVER_EN = 0x10;
-
 constexpr uint32_t ADC_MASK         = 0x0003FFFF;
 
 MAX30102::MAX30102(I2CBus& bus, uint8_t addr)
@@ -73,7 +68,7 @@ uint8_t MAX30102::readReg(uint8_t reg) {
 
 bool MAX30102::init() {
     reset();
-    usleep(50000);
+    delay(50);
 
     uint8_t partId;
     if (!readPartId(partId) || partId != EXPECTED_PART_ID) return false;
@@ -84,11 +79,8 @@ bool MAX30102::init() {
     clearFIFO();
 
     writeReg(Reg::FIFO_CONFIG, SAMPLE_AVG_4 | FIFO_ROLLOVER_EN | 0x0F);
-
     writeReg(Reg::MODE_CONFIG, Mode::SPO2);
-
     writeReg(Reg::SPO2_CONFIG, ADC_RANGE_16384 | 0x0C | 0x03);
-
     writeReg(Reg::LED1_PA, 0x24);
     writeReg(Reg::LED2_PA, 0x24);
 
@@ -233,9 +225,6 @@ double MAX30102::detectHeartRate(const uint32_t* irBuf, std::size_t count) {
 double MAX30102::calculateSpO2(const uint32_t* redBuf, const uint32_t* irBuf, std::size_t count) {
     if (count < 4) return 0.0;
 
-    double redAC = 0.0, redDC = 0.0;
-    double irAC  = 0.0, irDC  = 0.0;
-
     double redMean = 0.0, irMean = 0.0;
     for (std::size_t i = 0; i < count; ++i) {
         redMean += static_cast<double>(redBuf[i]);
@@ -244,10 +233,7 @@ double MAX30102::calculateSpO2(const uint32_t* redBuf, const uint32_t* irBuf, st
     redMean /= static_cast<double>(count);
     irMean  /= static_cast<double>(count);
 
-    redDC = redMean;
-    irDC  = irMean;
-
-    if (redDC < 1.0 || irDC < 1.0) return 0.0;
+    if (redMean < 1.0 || irMean < 1.0) return 0.0;
 
     double redVar = 0.0, irVar = 0.0;
     for (std::size_t i = 0; i < count; ++i) {
@@ -257,15 +243,13 @@ double MAX30102::calculateSpO2(const uint32_t* redBuf, const uint32_t* irBuf, st
         irVar  += id * id;
     }
 
-    redAC = std::sqrt(redVar / static_cast<double>(count));
-    irAC  = std::sqrt(irVar / static_cast<double>(count));
+    double redAC = std::sqrt(redVar / static_cast<double>(count));
+    double irAC  = std::sqrt(irVar / static_cast<double>(count));
 
     if (irAC < 1.0) return 0.0;
 
-    double R = (redAC / redDC) / (irAC / irDC);
-
+    double R = (redAC / redMean) / (irAC / irMean);
     double spo2 = 110.0 - 25.0 * R;
-
     spo2 = std::clamp(spo2, 0.0, 100.0);
 
     return spo2;

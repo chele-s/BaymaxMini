@@ -2,11 +2,12 @@
 
 #include <cstdint>
 #include <cstddef>
-#include <mutex>
+#include <Wire.h>
+#include <freertos/semphr.h>
 
 class I2CBus {
 public:
-    explicit I2CBus(int busId);
+    explicit I2CBus(int sda, int scl, uint32_t freqHz = 400000);
     ~I2CBus();
 
     I2CBus(const I2CBus&) = delete;
@@ -33,15 +34,14 @@ public:
     uint32_t errorCount() const;
     void     resetErrorCount();
 
-    std::mutex& mutex();
+    SemaphoreHandle_t mutexHandle();
 
 private:
-    int         m_busId;
-    int         m_fd;
-    std::mutex  m_mutex;
-    uint32_t    m_errors;
-
-    bool transfer(uint8_t addr,
-                  const uint8_t* txBuf, std::size_t txLen,
-                  uint8_t* rxBuf, std::size_t rxLen);
+    int              m_sda;
+    int              m_scl;
+    uint32_t         m_freq;
+    TwoWire*         m_wire;
+    SemaphoreHandle_t m_mutex;
+    uint32_t         m_errors;
+    bool             m_open;
 };

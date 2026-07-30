@@ -1,9 +1,9 @@
 #include "PCA9685.h"
-#include "I2C_Bus.h"
+#include "I2CBus.h"
 
 #include <cmath>
 #include <algorithm>
-#include <unistd.h>
+#include <Arduino.h>
 
 namespace Reg {
     constexpr uint8_t MODE1       = 0x00;
@@ -41,18 +41,18 @@ PCA9685::PCA9685(I2CBus& bus, uint8_t addr)
 
 bool PCA9685::init() {
     writeReg(Reg::MODE1, Bit::SLEEP);
-    usleep(500);
+    delayMicroseconds(500);
 
     setFrequency(m_freq);
 
     writeReg(Reg::MODE2, Bit::OUTDRV);
     writeReg(Reg::MODE1, Bit::AI | Bit::ALLCALL);
-    usleep(500);
+    delayMicroseconds(500);
 
     uint8_t mode1 = readReg(Reg::MODE1);
     mode1 &= ~Bit::SLEEP;
     writeReg(Reg::MODE1, mode1);
-    usleep(500);
+    delayMicroseconds(500);
 
     mode1 = readReg(Reg::MODE1);
     if (mode1 & Bit::RESTART) {
@@ -83,7 +83,7 @@ void PCA9685::setFrequency(float hz) {
     writeReg(Reg::MODE1, (oldMode & 0x7F) | Bit::SLEEP);
     writeReg(Reg::PRESCALE, prescale);
     writeReg(Reg::MODE1, oldMode);
-    usleep(500);
+    delayMicroseconds(500);
     writeReg(Reg::MODE1, oldMode | Bit::RESTART);
 }
 
@@ -191,7 +191,7 @@ void PCA9685::wake() {
     uint8_t mode1 = readReg(Reg::MODE1);
     mode1 &= ~Bit::SLEEP;
     writeReg(Reg::MODE1, mode1);
-    usleep(500);
+    delayMicroseconds(500);
 
     if (mode1 & Bit::RESTART) {
         writeReg(Reg::MODE1, mode1 | Bit::RESTART);

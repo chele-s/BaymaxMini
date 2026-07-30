@@ -1,6 +1,6 @@
 #include "VitalsMonitor.h"
-#include "../drivers/MAX30102.h"
-#include "../drivers/MLX90614.h"
+#include "MAX30102.h"
+#include "MLX90614.h"
 
 #include <cmath>
 #include <algorithm>
@@ -25,15 +25,15 @@ VitalsMonitor::VitalsMonitor(MAX30102& pulseOx, MLX90614& tempSensor)
     , m_measureActive(false)
     , m_initialized(false)
 {
-    m_hrFilter.alpha   = m_config.hrFilterAlpha;
-    m_spo2Filter.alpha = m_config.spo2FilterAlpha;
-    m_tempFilter.alpha = m_config.tempFilterAlpha;
+    m_hrFilter.setAlpha(m_config.hrFilterAlpha);
+    m_spo2Filter.setAlpha(m_config.spo2FilterAlpha);
+    m_tempFilter.setAlpha(m_config.tempFilterAlpha);
 }
 
 bool VitalsMonitor::init() {
-    m_hrFilter.alpha   = m_config.hrFilterAlpha;
-    m_spo2Filter.alpha = m_config.spo2FilterAlpha;
-    m_tempFilter.alpha = m_config.tempFilterAlpha;
+    m_hrFilter.setAlpha(m_config.hrFilterAlpha);
+    m_spo2Filter.setAlpha(m_config.spo2FilterAlpha);
+    m_tempFilter.setAlpha(m_config.tempFilterAlpha);
 
     m_initialized = true;
     return true;
@@ -236,7 +236,7 @@ void VitalsMonitor::stateComplete(float dt) {
 
 void VitalsMonitor::updateQuality() {
     float hrConf = 0.0f;
-    if (m_hrQuality.count >= 4) {
+    if (m_hrQuality.count() >= 4) {
         double hrVar = m_hrQuality.variance();
         double hrMean = m_hrQuality.mean();
         if (hrMean > 1.0) {
@@ -247,7 +247,7 @@ void VitalsMonitor::updateQuality() {
     m_current.hrConfidence = hrConf;
 
     float spo2Conf = 0.0f;
-    if (m_spo2Quality.count >= 4) {
+    if (m_spo2Quality.count() >= 4) {
         double spo2Var = m_spo2Quality.variance();
         if (m_current.spo2Percent > 80.0) {
             double cv = std::sqrt(spo2Var) / m_current.spo2Percent;
@@ -368,9 +368,9 @@ void VitalsMonitor::stopMeasurement() {
 
 void VitalsMonitor::setConfig(const vitals::MeasureConfig& config) {
     m_config = config;
-    m_hrFilter.alpha   = config.hrFilterAlpha;
-    m_spo2Filter.alpha = config.spo2FilterAlpha;
-    m_tempFilter.alpha = config.tempFilterAlpha;
+    m_hrFilter.setAlpha(config.hrFilterAlpha);
+    m_spo2Filter.setAlpha(config.spo2FilterAlpha);
+    m_tempFilter.setAlpha(config.tempFilterAlpha);
 }
 
 void VitalsMonitor::setCallbacks(const vitals::VitalsCallbacks& cb) {

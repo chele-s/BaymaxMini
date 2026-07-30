@@ -1,0 +1,30 @@
+system:
+  node_name: "BaymaxMini_Brain"
+  version: "2.0.0"
+
+esp32:
+  port: "COM3"
+  baud: 921600
+  timeout_sec: 2.0
+  auto_reconnect: true
+
+camera:
+  type: "mjpeg"
+  stream_url: "http://192.168.4.1:81/stream"
+  usb_index: 0
+  width: 640
+  height: 480
+  fps: 30
+
+vision:
+  face_detection: true
+  emotion_analysis: true
+  min_confidence: 0.6
+
+audio:
+  sample_rate: 16000
+  channels: 1
+
+vitals:
+  hrv_window_samples: 300
+  alert_threshold_risk: 0.6
